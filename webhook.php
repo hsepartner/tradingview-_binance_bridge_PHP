@@ -1,5 +1,32 @@
 <?php
-// webhook.php - TradingView to Binance Webhook
+// Security verification function
+function verifyWebhook() {
+    // IP whitelisting (TradingView IPs)
+    $allowed_ips = ['52.89.214.238', '34.212.75.30', '54.218.53.128'];
+    $client_ip = $_SERVER['REMOTE_ADDR'];
+    
+    if (!in_array($client_ip, $allowed_ips)) {
+        return false;
+    }
+    
+    // Rate limiting
+    $rate_limit_file = 'rate_limit.txt';
+    $current_time = time();
+    $last_request = file_exists($rate_limit_file) ? (int)file_get_contents($rate_limit_file) : 0;
+    
+    if (($current_time - $last_request) < 5) { // 5 seconds between requests
+        return false;
+    }
+    
+    file_put_contents($rate_limit_file, $current_time);
+    return true;
+}
+
+// ✅ WEBHOOK VERIFICATION - Yeh sabse pehle run karein
+if (!verifyWebhook()) {
+    http_response_code(429);
+    die('Rate limit exceeded or IP not allowed');
+}
 
 // GitHub secrets se API keys lena
 $binance_api_key = getenv('BINANCE_API_KEY');
